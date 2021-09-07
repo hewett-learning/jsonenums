@@ -3,6 +3,7 @@
 package main
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 )
@@ -39,6 +40,47 @@ func init() {
 			interface{}(XL).(fmt.Stringer).String(): XL,
 		}
 	}
+}
+
+func (r ShirtSize) toString() (string, error) {
+	s, ok := _ShirtSizeValueToName[r]
+	if !ok {
+		return "", fmt.Errorf("invalid ShirtSize: %d", r)
+	}
+	return s, nil
+}
+
+func (r *ShirtSize) setValue(str string) error {
+	v, ok := _ShirtSizeNameToValue[str]
+	if !ok {
+		return fmt.Errorf("string %s value is not type of ShirtSize", str)
+	}
+	*r = v
+	return nil
+}
+
+// Scan - Implement the database/sql scanner interface
+func (r *ShirtSize) Scan(value interface{}) error {
+
+	if value == nil {
+		return nil
+	}
+
+	switch data := value.(type) {
+	case string:
+		return r.setValue(data)
+	case []byte:
+		return r.setValue(string(data[:]))
+	default:
+		return fmt.Errorf("can't scan %T into type %T", value, r)
+	}
+
+	return nil
+}
+
+// Value - Implementation of valuer for database/sql
+func (r ShirtSize) Value() (driver.Value, error) {
+	return r.toString()
 }
 
 // MarshalJSON is generated so ShirtSize satisfies json.Marshaler.

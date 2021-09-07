@@ -3,6 +3,7 @@
 package main
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 )
@@ -42,6 +43,47 @@ func init() {
 			interface{}(Sunday).(fmt.Stringer).String():    Sunday,
 		}
 	}
+}
+
+func (r WeekDay) toString() (string, error) {
+	s, ok := _WeekDayValueToName[r]
+	if !ok {
+		return "", fmt.Errorf("invalid WeekDay: %d", r)
+	}
+	return s, nil
+}
+
+func (r *WeekDay) setValue(str string) error {
+	v, ok := _WeekDayNameToValue[str]
+	if !ok {
+		return fmt.Errorf("string %s value is not type of WeekDay", str)
+	}
+	*r = v
+	return nil
+}
+
+// Scan - Implement the database/sql scanner interface
+func (r *WeekDay) Scan(value interface{}) error {
+
+	if value == nil {
+		return nil
+	}
+
+	switch data := value.(type) {
+	case string:
+		return r.setValue(data)
+	case []byte:
+		return r.setValue(string(data[:]))
+	default:
+		return fmt.Errorf("can't scan %T into type %T", value, r)
+	}
+
+	return nil
+}
+
+// Value - Implementation of valuer for database/sql
+func (r WeekDay) Value() (driver.Value, error) {
+	return r.toString()
 }
 
 // MarshalJSON is generated so WeekDay satisfies json.Marshaler.
